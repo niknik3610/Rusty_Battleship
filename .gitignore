@@ -1,0 +1,4 @@
+frontend/package-lock.json
+frontend/node_modules
+rust_backend/cargo.lock
+rust_backend/target
