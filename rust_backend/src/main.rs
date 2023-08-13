@@ -1,11 +1,11 @@
-use warp::Filter;
+mod router;
+mod server;
+mod request;
+mod response;
+
+pub const SERVER_ADDR: &str = "127.0.0.1:8000";
 
 #[tokio::main]
 async fn main() {
-    let message = warp::path!("hello" / String)
-        .map(|name| format!("Hello, {}!", name));
-
-    warp::serve(message)
-        .run(([0, 0, 0, 0], 8000))
-        .await
+    server::run_server().await;
 }
