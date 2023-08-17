@@ -1,12 +1,15 @@
-use std::{fs::File, io::Read};
+use std::{fs::File, io::Read, sync::Mutex, collections::HashMap};
+use lazy_static::lazy_static;
 
 const FILE_PREFIX: &str = "../frontend/";
 
+#[derive(Debug)]
 pub enum RouterErrorType {
     Type404,
 }
+#[derive(Debug)]
 pub struct RouterError {
-    error_type: RouterErrorType,
+    pub error_type: RouterErrorType,
     file: String
 } impl RouterError {
     pub fn new(error_type: RouterErrorType, file: String) -> Self{
@@ -15,6 +18,10 @@ pub struct RouterError {
             file
         }
     }
+}
+
+lazy_static! {
+    static ref CACHED_FILES: Mutex<HashMap<String, File>> = Mutex::new(HashMap::new());
 }
 
 pub fn route(url: &str) -> Result<String, RouterError> {
@@ -28,10 +35,42 @@ pub fn route(url: &str) -> Result<String, RouterError> {
 
     println!("{file_route}");
 
+    if CACHE_FILES 
+    let file = File::open(url)
     //TODO: possibly change
     let mut file = File::open(file_route).unwrap();
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
 
     return Ok(contents);
+}
+
+pub fn get_file_cache(url: &str) -> Option<File>  {
+    let file_exists = cache_check_file(url);
+    match file_exists {
+        Some(file) => return Some(file),
+        None => {}
+    }
+
+    let file_result = File::open(url);
+    
+    match file_result {
+        Ok(file) => {
+            cache_insert_file(url, file.try_clone().unwrap());
+            return Some(file);
+        }
+        Err(e) => {
+            return None
+        }
+    }
+}
+
+fn cache_check_file(url: &str) -> Option<File> {
+    let cache = CACHED_FILES.lock().unwrap();
+    return cache.get(url).map(|file| file.try_clone().unwrap()) 
+}
+
+fn cache_insert_file(url: &str, file: File) {
+    let mut cache = CACHED_FILES.lock().unwrap();
+    cache.insert(url.to_owned(), file);
 }

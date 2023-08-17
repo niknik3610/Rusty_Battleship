@@ -26,8 +26,6 @@ pub fn handle_request(mut con: TcpStream) {
         .collect();
 
     let parsed_req = parse_request(stringified_req).unwrap();
-    println!("Url: {:?}", parsed_req.uri);
-
     match parsed_req.uri.method {
         Method::GET => response_file(con, &parsed_req.uri.url[..])
     }
