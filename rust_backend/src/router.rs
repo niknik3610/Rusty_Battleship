@@ -1,6 +1,8 @@
 use std::{fs::File, io::Read, sync::Mutex, collections::HashMap};
 use lazy_static::lazy_static;
 
+use crate::ARGS;
+
 const FILE_PREFIX: &str = "../frontend/";
 
 #[derive(Debug)]
@@ -31,14 +33,18 @@ pub fn route(url: &str) -> Result<String, RouterError> {
         _ => return Err(RouterError::new(
                 RouterErrorType::Type404,
                 FILE_PREFIX.to_string() + "404.html"
-        ))};
+                ))};
 
-    println!("{file_route}");
+    let args = ARGS.lock().unwrap();
+    let mut file: File;
 
-    if CACHE_FILES 
-    let file = File::open(url)
-    //TODO: possibly change
-    let mut file = File::open(file_route).unwrap();
+    if args.cached {
+        file = get_file_cache(&file_route[..]).unwrap(); 
+    }
+    else {
+        file = File::open(file_route).unwrap();
+    }
+
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
 
@@ -73,4 +79,27 @@ fn cache_check_file(url: &str) -> Option<File> {
 fn cache_insert_file(url: &str, file: File) {
     let mut cache = CACHED_FILES.lock().unwrap();
     cache.insert(url.to_owned(), file);
+}
+
+pub fn test_caching(test_amount: u32) {
+    use std::time::Instant;
+
+    println!("Starting Test without Caching");
+    ARGS.lock().unwrap().cached = false; 
+
+    let time_start = Instant::now();
+    for _ in 0..test_amount {
+        route("/");
+    }
+    println!("{test_amount} file openings without Caching took {:.2?}", time_start.elapsed());
+
+
+    println!("Starting Test with Caching");
+    ARGS.lock().unwrap().cached = true; 
+
+    let time_start = Instant::now();
+    for _ in 0..test_amount {
+        route("/");
+    }
+    println!("{test_amount} file openings with Caching took {:.2?}", time_start.elapsed())
 }
