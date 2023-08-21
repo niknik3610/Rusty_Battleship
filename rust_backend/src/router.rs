@@ -1,8 +1,6 @@
 use std::{fs::File, io::Read, sync::Mutex, collections::HashMap};
 use lazy_static::lazy_static;
 
-use crate::ARGS;
-
 const FILE_PREFIX: &str = "../frontend/";
 
 #[derive(Debug)]
@@ -81,25 +79,3 @@ fn cache_insert_file(url: &str, file: File) {
     cache.insert(url.to_owned(), file);
 }
 
-pub fn test_caching(test_amount: u32) {
-    use std::time::Instant;
-
-    println!("Starting Test without Caching");
-    ARGS.lock().unwrap().cached = false; 
-
-    let time_start = Instant::now();
-    for _ in 0..test_amount {
-        route("/");
-    }
-    println!("{test_amount} file openings without Caching took {:.2?}", time_start.elapsed());
-
-
-    println!("Starting Test with Caching");
-    ARGS.lock().unwrap().cached = true; 
-
-    let time_start = Instant::now();
-    for _ in 0..test_amount {
-        route("/");
-    }
-    println!("{test_amount} file openings with Caching took {:.2?}", time_start.elapsed())
-}

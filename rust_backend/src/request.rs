@@ -1,13 +1,13 @@
 use std::{
     net::TcpStream, 
-    io::{BufReader, BufRead}, str::FromStr
+    io::{BufReader, BufRead}, str::FromStr, any
 };
 
+use anyhow::anyhow;
 use crate::response::{response_200, response_file};
 
-struct Request {
+pub struct Request {
     pub uri: ParsedUri,
-
 }
 impl Request {
     fn new(url: ParsedUri) -> Request {
@@ -27,11 +27,12 @@ pub fn handle_request(mut con: TcpStream) {
 
     let parsed_req = parse_request(stringified_req).unwrap();
     match parsed_req.uri.method {
-        Method::GET => response_file(con, &parsed_req.uri.url[..])
+        Method::GET => response_file(con, &parsed_req.uri.url[..]),
+        Method::POST => todo!(),
     }
 }
 
-fn parse_request(req: Vec<String>) -> Result<Request, String> {
+fn parse_request(req: Vec<String>) -> anyhow::Result<Request> {
     let url = req[0].clone();
     return Ok(Request::new(
         parse_url(url).unwrap()
@@ -39,27 +40,28 @@ fn parse_request(req: Vec<String>) -> Result<Request, String> {
 }
 
 #[derive(Debug)]
-struct ParsedUri {
+pub struct ParsedUri {
     method: Method,
-    url: String,
+    pub url: String,
     version: String
 }
 
 #[derive(Debug)]
 enum Method {
     GET,
+    POST,
 }
-impl FromStr for Method {
-    type Err = ();
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl Method {
+    fn from_str(s: &str) -> anyhow::Result<Self> {
         match s {
-            "GET" => return Ok(Method::GET),
-            _ => return Err(())
+            "GET" => Ok(Method::GET),
+            "POST" => Ok(Method::POST),
+            _ => Err(anyhow!("Unknown HTTP Request Method"))
         }
     }
 }
 
-fn parse_url(url: String) -> Result<ParsedUri, String> {
+fn parse_url(url: String) -> anyhow::Result<ParsedUri, String> {
     let mut curr_field = 0;
     let mut fields = vec![
         String::new(),      //Method
@@ -72,7 +74,7 @@ fn parse_url(url: String) -> Result<ParsedUri, String> {
             curr_field += 1;
         }
         else {
-            fields[curr_field].push(char);
+
         }
     });
 

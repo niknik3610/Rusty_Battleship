@@ -2,10 +2,10 @@ mod router;
 mod server;
 mod request;
 mod response;
-use std::sync::Mutex;
+mod battleship_game;
 
+use std::sync::Mutex;
 use lazy_static::lazy_static;
-use router::test_caching;
 
 pub const SERVER_ADDR: &str = "127.0.0.1:8000";
 
@@ -22,11 +22,9 @@ pub struct CmdArgs {
 
 #[tokio::main]
 async fn main() {
-    test_caching(1000000);
-
-    // gather_args();
-    // println!("Using Caching: {:?}", ARGS.lock().unwrap().cached);
-    // server::run_server().await;  
+    gather_args();
+    println!("Using Caching: {:?}", ARGS.lock().unwrap().cached);
+    server::run_server().await;  
 }
 
 fn gather_args() {

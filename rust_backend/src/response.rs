@@ -1,6 +1,7 @@
 use std::{net::TcpStream, io::{Write, Read}, fs::File};
-
+use anyhow::anyhow;
 use crate::router::{self, RouterError};
+use crate::request::Request;
 
 pub fn response_200(mut con: TcpStream) {
     let response = "HTTP/1.1 200 OK\r\n\r\n";
@@ -39,13 +40,13 @@ pub fn response_file(mut con: TcpStream, url: &str) {
     con.write_all(response.as_bytes()).unwrap();
 }
 
-fn get_file(path: String) -> Result<String, String> {
+fn get_file(path: String) -> anyhow::Result<String> {
     let file_result = File::open(path); 
     let mut file: File;
 
     match file_result {
         Ok(r) => file = r,
-        Err(_) => return Err(String::from("Could not find File"))
+        Err(_) => return Err(anyhow!("Could Not find File"))
     }
 
     let mut contents = String::new();
@@ -59,4 +60,30 @@ fn match_router_error(e: RouterError, con: TcpStream) {
         router::RouterErrorType::Type404 => response_404(con),
         _ => response_500(con)
     }
+}
+
+enum GetRequestType {
+    SiteRequest,
+    BoardRequest,
+}
+fn handle_get_request(req: Request, con: TcpStream) {
+    let split_uri: Vec<&str> = req.uri.url.split("/").collect();
+
+    match split_uri[0] {
+        "update_board" => todo!(),
+        _ => response_file(con, &req.uri.url[..]),
+    }
+}
+fn update_board(player: u32, con: &mut TcpStream) {
+    //TODO
+    con.write_all("Nothing Here Rn".as_bytes());
+}
+
+enum PutRequestType {
+    RegisterClient,
+    AliveSquare,
+    KillSquare,
+}
+fn handle_put_request(uri: &str) {
+
 }
