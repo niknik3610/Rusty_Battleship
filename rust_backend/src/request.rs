@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::anyhow;
-use crate::response::{response_200, response_file};
+use crate::{response::{response_200, response_file}, battleship_game::Game};
 
 pub struct Request {
     pub uri: ParsedUri,
@@ -17,7 +17,7 @@ impl Request {
     }
 }
 
-pub fn handle_request(mut con: TcpStream) {
+pub fn handle_request(mut con: TcpStream, game: &mut Game) {
     let buf_reader = BufReader::new(&mut con);
     let stringified_req: Vec<_> = buf_reader
         .lines()

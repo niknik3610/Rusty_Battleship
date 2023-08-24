@@ -1,9 +1,10 @@
 use anyhow::anyhow;
+use serde::Serialize;
 
 pub type Board = Vec<Vec<SquareState>>;
 pub type Vec2 = (usize, usize);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize)]
 enum SquareState {
     Alive,
     Dead,
@@ -54,4 +55,17 @@ pub struct Game {
         }
         return Err(anyhow!("Invalid Move"));
     }
+    pub fn get_board_priv(&self, player_id: usize) -> anyhow::Result<&Board> {
+        if player_id >= self.players.len() {
+            return Err(anyhow!("Player ID out of bounds"));
+        }
+        return Ok(&self.players[player_id].private_board);
+    }
+    pub fn get_board_attack(&self, player_id: usize) -> anyhow::Result<&Board> {
+        if player_id >= self.players.len() {
+            return Err(anyhow!("Player ID out of bounds"));
+        }
+        return Ok(&self.players[player_id].attack_board);
+    }
+ 
 }

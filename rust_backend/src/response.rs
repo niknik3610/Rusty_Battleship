@@ -1,6 +1,6 @@
 use std::{net::TcpStream, io::{Write, Read}, fs::File};
 use anyhow::anyhow;
-use crate::router::{self, RouterError};
+use crate::{router::{self, RouterError}, battleship_game::Game};
 use crate::request::Request;
 
 pub fn response_200(mut con: TcpStream) {
@@ -66,17 +66,31 @@ enum GetRequestType {
     SiteRequest,
     BoardRequest,
 }
-fn handle_get_request(req: Request, con: TcpStream) {
+fn handle_get_request(req: Request, mut con: TcpStream, game: &Game) {
     let split_uri: Vec<&str> = req.uri.url.split("/").collect();
 
     match split_uri[0] {
-        "update_board" => todo!(),
+        "update_board" => {
+            let requesting_player = split_uri[1].parse();
+            updated_priv_board_req(requesting_player, con, game);
+        }
         _ => response_file(con, &req.uri.url[..]),
     }
 }
-fn update_board(player: u32, con: &mut TcpStream) {
-    //TODO
-    con.write_all("Nothing Here Rn".as_bytes());
+fn updated_priv_board_req(player: usize, mut con: TcpStream, game: &Game) {
+    let board = game.get_board_priv(player);
+
+    match board {
+        Ok(r) => {
+            println!("Updated Player {}'s board", player);
+            let board_json = serde_json::to_string(r).unwrap();
+            con.write_all(board_json.as_bytes());
+        },
+        Err(e) => {
+            eprintln!("{}", e.to_string());
+            response_404(con);
+        }
+    }
 }
 
 enum PutRequestType {
