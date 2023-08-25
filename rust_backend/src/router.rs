@@ -1,6 +1,8 @@
 use std::{fs::File, io::Read, sync::Mutex, collections::HashMap};
 use lazy_static::lazy_static;
 
+use crate::ARGS;
+
 const FILE_PREFIX: &str = "../frontend/";
 
 #[derive(Debug)]
