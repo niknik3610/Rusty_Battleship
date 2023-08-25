@@ -1,24 +1,18 @@
-import './style.css'
-import typescriptLogo from './typescript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.ts'
+const BOARD_SIZE = {
+    x: 700,
+    y: 700
+}
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-  </div>
-`
+function main() {
+    console.log("Runnin'");
+    const board = document.getElementById("gameboard")! as HTMLCanvasElement;
+    const board_ctx = board.getContext("2d")!;
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+    board.width = BOARD_SIZE.x;
+    board.height = BOARD_SIZE.y;
+
+    board_ctx.fillStyle = "red";
+    board_ctx.fillRect(0, 0, BOARD_SIZE.x, BOARD_SIZE.y);
+}
+
+main();
