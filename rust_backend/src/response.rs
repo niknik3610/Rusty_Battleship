@@ -66,7 +66,7 @@ enum GetRequestType {
     SiteRequest,
     BoardRequest,
 }
-fn handle_get_request(req: Request, mut con: TcpStream, game: &Game) {
+pub fn handle_get_request(req: Request, con: TcpStream, game: &Game) {
     let split_uri: Vec<&str> = req.uri.url.split("/").collect();
 
     match split_uri[0] {
@@ -105,7 +105,7 @@ enum PostRequestType {
     KillSquare,
     RequestClientID,
 }
-fn handle_post_request(req: Request, mut con: TcpStream, game: &mut Game) {
+pub fn handle_post_request(req: Request, mut con: TcpStream, game: &mut Game) {
     let split_uri: Vec<&str> = req.uri.url.split("/").collect();
 
     match split_uri[0] {

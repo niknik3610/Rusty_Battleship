@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::anyhow;
-use crate::{response::{response_200, response_file}, battleship_game::Game};
+use crate::{response::{response_200, response_file, handle_get_request, handle_post_request}, battleship_game::Game};
 
 pub struct Request {
     pub uri: ParsedUri,
@@ -27,8 +27,8 @@ pub fn handle_request(mut con: TcpStream, game: &mut Game) {
 
     let parsed_req = parse_request(stringified_req).unwrap();
     match parsed_req.uri.method {
-        Method::GET => response_file(con, &parsed_req.uri.url[..]),
-        Method::POST => todo!(),
+        Method::GET => handle_get_request(parsed_req, con, game),
+        Method::POST => handle_post_request(parsed_req, con, game),
     }
 }
 
