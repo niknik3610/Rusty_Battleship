@@ -10,9 +10,10 @@ use lazy_static::lazy_static;
 pub const SERVER_ADDR: &str = "127.0.0.1:8000";
 
 lazy_static! {
-    pub static ref ARGS: Mutex<CmdArgs> = Mutex::new(CmdArgs {
-        cached: false,
-    });
+    pub static ref ARGS: Mutex<CmdArgs> = Mutex::new(
+        CmdArgs {
+            cached: false,
+        });
 }
 
 #[derive(Debug)]

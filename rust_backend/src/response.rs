@@ -70,7 +70,7 @@ pub fn handle_get_request(req: Request, con: TcpStream, game: &Game) {
     let split_uri: Vec<&str> = req.uri.url.split("/").collect();
 
     match split_uri[0] {
-        "update_board" => {
+        "/update_board" => {
             let requesting_player = split_uri[1].parse().unwrap(); //TODO: Possibly change
             updated_board_req(requesting_player, con, game);
         } 
