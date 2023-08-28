@@ -1,5 +1,6 @@
 use std::{net::TcpStream, io::{Write, Read}, fs::File};
 use anyhow::anyhow;
+use serde::Serializer;
 use crate::{router::{self, RouterError}, battleship_game::{Game, Board}};
 use crate::request::Request;
 
@@ -16,6 +17,19 @@ fn response_404(mut con: TcpStream) {
 fn response_500(mut con: TcpStream) {
     let response = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
     con.write_all(response.as_bytes()).unwrap();
+}
+
+fn response_201(mut con: TcpStream, body: Option<&str>) {
+    let response = "HTTP/1.1 201 Created\r\n";
+    if let None = body {    
+        let response_without_body = format!("{response}\r\n");
+        println!("{response_without_body}");
+        con.write_all(response_without_body.as_bytes()).unwrap();
+        return;
+    }
+    let response_with_body = format!("{response}Content-type:application/json\r\n\r\n{}", body.unwrap());
+    println!("{response_with_body}");
+    con.write_all(response_with_body.as_bytes()).unwrap();
 }
 
 pub fn response_file(mut con: TcpStream, url: &str) {
@@ -67,17 +81,22 @@ enum GetRequestType {
     BoardRequest,
 }
 pub fn handle_get_request(req: Request, con: TcpStream, game: &Game) {
+    //TODO: Change this, client id should be contained within curly braces {}
     let split_uri: Vec<&str> = req.uri.url.split("/").collect();
 
-    match split_uri[0] {
-        "/update_board" => {
-            let requesting_player = split_uri[1].parse().unwrap(); //TODO: Possibly change
+    match split_uri[1] {
+        "update_board" => {
+            let requesting_player = split_uri[2].parse().unwrap(); //TODO: Possibly change
+            println!("{requesting_player} requested their board");
             updated_board_req(requesting_player, con, game);
         } 
-        _ => response_file(con, &req.uri.url[..]),
+        _ => {
+            println!("Request not found, defauling to file");
+            response_file(con, &req.uri.url[..]);
+        }
     }
 }
-fn updated_board_req(requesting_player_id: usize, mut con: TcpStream, game: &Game) {
+fn updated_board_req(requesting_player_id: usize, con: TcpStream, game: &Game) {
     let board: anyhow::Result<&Board>;
     if game.current_turn == requesting_player_id {
         board = game.get_board_attack(requesting_player_id);
@@ -89,8 +108,8 @@ fn updated_board_req(requesting_player_id: usize, mut con: TcpStream, game: &Gam
     match board {
         Ok(r) => {
             println!("Updated Player {}'s board", requesting_player_id);
-            let board_json = serde_json::to_string(r).unwrap();
-            con.write_all(board_json.as_bytes()).unwrap();
+            let serialized_board =  serde_json::to_string(&r).unwrap();
+            response_201(con, Some(&serialized_board[..]));
         },
         Err(e) => {
             eprintln!("{}", e.to_string());
@@ -105,16 +124,18 @@ enum PostRequestType {
     KillSquare,
     RequestClientID,
 }
-pub fn handle_post_request(req: Request, mut con: TcpStream, game: &mut Game) {
-    let split_uri: Vec<&str> = req.uri.url.split("/").collect();
-
-    match split_uri[0] {
-        "request_client_id" => {
+pub fn handle_post_request(req: Request, con: TcpStream, game: &mut Game) {
+    match &req.uri.url[..] {
+        "/request_client_id" => {
             let c_id = game.player_connection();
-            let response = serde_json::to_string(&c_id).unwrap();
-            con.write_all(response.as_bytes()).unwrap();
+            let serialized_id = serde_json::to_string(&c_id).unwrap();
+            let response = format!("{{
+\"c_id\": {serialized_id}
+            }}");
+            response_201(con, Some(response.as_str()));
         }
         _ => {
+            println!("Unknown Request");
             response_404(con)
         }
     }

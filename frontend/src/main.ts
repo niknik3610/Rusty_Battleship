@@ -19,7 +19,8 @@ function main() {
 }
 
 function refreshBoard(board_ctx: CanvasRenderingContext2D) {
-     getRequest("/api/updateBoard").then((res) => {
+    console.log("fetching board");
+    getRequest("/api/updateBoard").then((res) => {
         console.log(res);
     }); 
 }
