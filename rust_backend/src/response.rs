@@ -23,17 +23,14 @@ fn response_201(mut con: TcpStream, body: Option<&str>) {
     let response = "HTTP/1.1 201 Created\r\n";
     if let None = body {    
         let response_without_body = format!("{response}\r\n");
-        println!("{response_without_body}");
         con.write_all(response_without_body.as_bytes()).unwrap();
         return;
     }
     let response_with_body = format!("{response}Content-type:application/json\r\n\r\n{}", body.unwrap());
-    println!("{response_with_body}");
     con.write_all(response_with_body.as_bytes()).unwrap();
 }
 
 pub fn response_file(mut con: TcpStream, url: &str) {
-    println!("{url}");
 
     let status_line = "HTTP/1.1 200 OK";
     let file_contents_result = router::route(url);
@@ -81,14 +78,20 @@ enum GetRequestType {
     BoardRequest,
 }
 pub fn handle_get_request(req: Request, con: TcpStream, game: &Game) {
-    //TODO: Change this, client id should be contained within curly braces {}
     let split_uri: Vec<&str> = req.uri.url.split("/").collect();
 
     match split_uri[1] {
         "update_board" => {
-            let requesting_player = split_uri[2].parse().unwrap(); //TODO: Possibly change
-            println!("{requesting_player} requested their board");
-            updated_board_req(requesting_player, con, game);
+            let requesting_player_string = split_uri[2];  
+            let singleton_id = get_singleton_resource_id(requesting_player_string);
+
+            if let Some(singleton_id) = singleton_id {
+                println!("{singleton_id} requested their board");
+                updated_board_req(singleton_id, con, game);
+            }
+            else {
+                response_404(con);
+            }
         } 
         _ => {
             println!("Request not found, defauling to file");
@@ -139,4 +142,44 @@ pub fn handle_post_request(req: Request, con: TcpStream, game: &mut Game) {
             response_404(con)
         }
     }
+}
+
+fn get_singleton_resource_id(url: &str) -> Option<usize> {  
+    let url = urlencoding::decode(url);
+    if let Err(_) = url {
+        return None;
+    }
+
+    let mut final_string = String::new();
+    let mut within_pars = false;
+    let mut done = false;
+
+    url.unwrap()
+        .chars()
+        .into_iter()
+        .for_each(|char|{
+            if done {
+                return;
+            }
+            else if char == '}' {
+                done = true;
+            }
+            else if within_pars {
+                final_string.push(char);
+            }
+            else if char == '{' {
+                within_pars = true;
+            } 
+        });
+
+    if final_string.is_empty() {
+        return None
+    }
+
+    let parsed_string = final_string.trim().parse();
+
+    if let Err(_e) = parsed_string {
+        return None
+    }
+    return Some(parsed_string.unwrap())
 }

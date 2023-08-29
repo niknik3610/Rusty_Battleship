@@ -78,7 +78,6 @@ fn parse_url(url: String) -> anyhow::Result<ParsedUri, String> {
         }
     });
 
-    println!("{}", fields[0]);
     let parsed_url = ParsedUri {
         method: Method::from_str(&fields[0][..]).unwrap(),
         url: fields[1].clone(),
