@@ -10,6 +10,11 @@ pub enum SquareState {
     Dead,
     Empty
 }
+pub enum GameState {
+    Initilization,
+    Playing,
+    Finished
+}
 
 pub struct Player {
     pub id: u32,
@@ -21,6 +26,7 @@ pub struct Game {
     pub players: Vec<Player>,
     pub current_turn: usize,
     pub connected_players: usize,
+    pub game_state: GameState,
 } impl Game {
     pub fn new() -> Self{
         const TEMPLATE_BOARD: [[SquareState; 10]; 10] = [[SquareState::Empty; 10]; 10];
@@ -45,17 +51,21 @@ pub struct Game {
             players,
             current_turn: 0,
             connected_players: 0,
+            game_state: GameState::Initilization,
         }
     }
     pub fn alive_square(&mut self, coords: Vec2, player_id: usize) -> anyhow::Result<()>{
-        let curr_player = &mut self.players[player_id];
-        let curr_square = &mut curr_player.private_board[coords.0][coords.1];
+        if let GameState::Initilization = self.game_state {
+            let curr_player = &mut self.players[player_id];
+            let curr_square = &mut curr_player.private_board[coords.0][coords.1];
 
-        if let SquareState::Empty = curr_square {
-            *curr_square = SquareState::Alive;
-            return Ok(());
+            if let SquareState::Empty = curr_square {
+                *curr_square = SquareState::Alive;
+                return Ok(());
+            }
+            return Err(anyhow!("Invalid Move"));
         }
-        return Err(anyhow!("Invalid Move"));
+        return Err(anyhow!("Invalid Gamestate Request"));
     }
     pub fn get_board_priv(&self, player_id: usize) -> anyhow::Result<&Board> {
         if player_id >= self.players.len() {
@@ -75,5 +85,12 @@ pub struct Game {
             return self.connected_players - 1;
         }
         return 2; //spectator
+    }
+    pub fn advance_game_state(&mut self) {
+        match self.game_state {
+            GameState::Initilization => self.game_state = GameState::Playing,
+            GameState::Playing => self.game_state = GameState::Finished,
+            GameState::Finished => self.game_state = GameState::Finished,
+        }
     }
 }

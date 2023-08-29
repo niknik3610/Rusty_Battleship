@@ -80,8 +80,9 @@ enum GetRequestType {
 pub fn handle_get_request(req: Request, con: TcpStream, game: &Game) {
     let split_uri: Vec<&str> = req.uri.url.split("/").collect();
 
+    println!("{}", split_uri[1]);
     match split_uri[1] {
-        "update_board" => {
+        "updateBoard" => {
             let requesting_player_string = split_uri[2];  
             let singleton_id = get_singleton_resource_id(requesting_player_string);
 
