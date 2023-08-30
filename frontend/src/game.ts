@@ -1,8 +1,16 @@
-export enum SquareState {
-    Alive = "Alive",
-    Dead = "Dead",
-    Empty = "Empty"
-}
+export module Game {
+    export enum SquareState {
+        Alive = "Alive",
+        Dead = "Dead",
+        Empty = "Empty"
+    }
 
-export type Board = SquareState[][];
+    export enum MoveType {
+        AliveSquare = "AliveSquare",
+        KillSquare = "KillSquare",
+    }
+ 
+    export type Board = SquareState[][];
+
+}
 

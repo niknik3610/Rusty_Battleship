@@ -122,22 +122,23 @@ fn updated_board_req(requesting_player_id: usize, con: TcpStream, game: &Game) {
     }
 }
 
-enum PostRequestType {
-    RegisterClient,
-    AliveSquare,
-    KillSquare,
-    RequestClientID,
-}
 pub fn handle_post_request(req: Request, con: TcpStream, game: &mut Game) {
-    match &req.uri.url[..] {
-        "/request_client_id" => {
+    let split_uri: Vec<&str> = req.uri.url.split("/").collect();
+
+    match split_uri[1] {
+        "request_client_id" => {
             let c_id = game.player_connection();
             let serialized_id = serde_json::to_string(&c_id).unwrap();
-            let response = format!("{{
-\"c_id\": {serialized_id}
-            }}");
+            let response = format!("{{\"c_id\": {serialized_id}}}");
             response_201(con, Some(response.as_str()));
-        }
+        },
+        "sendMove" => {
+            let c_id = get_singleton_resource_id(split_uri[2]);
+            if let Some(c_id) = c_id {
+                response_201(con, None);
+
+            }
+        },
         _ => {
             println!("Unknown Request");
             response_404(con)

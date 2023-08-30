@@ -3,6 +3,7 @@ mod server;
 mod request;
 mod response;
 mod battleship_game;
+mod api_structs;
 
 use std::sync::Mutex;
 use lazy_static::lazy_static;

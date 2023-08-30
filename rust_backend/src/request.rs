@@ -8,12 +8,17 @@ use crate::{response::{response_200, response_file, handle_get_request, handle_p
 
 pub struct Request {
     pub uri: ParsedUri,
+    pub body: Option<String>,
 }
 impl Request {
-    fn new(url: ParsedUri) -> Request {
+    pub fn new(url: ParsedUri) -> Request {
         return Request {
-            uri: url
+            uri: url,
+            body: None
         }
+    }
+    fn add_body(&mut self, body: &str) {
+        self.body = Some(body.to_owned());
     }
 }
 
@@ -25,14 +30,17 @@ pub fn handle_request(mut con: TcpStream, game: &mut Game) {
         .take_while(|line| !line.is_empty())
         .collect();
 
-    let parsed_req = parse_request(stringified_req).unwrap();
+    let parsed_req = parse_request(&stringified_req).unwrap();
     match parsed_req.uri.method {
         Method::GET => handle_get_request(parsed_req, con, game),
-        Method::POST => handle_post_request(parsed_req, con, game),
+        Method::POST => {
+            get_body_from_req(stringified_req);
+            handle_post_request(parsed_req, con, game);
+        }
     }
 }
 
-fn parse_request(req: Vec<String>) -> anyhow::Result<Request> {
+fn parse_request(req: &Vec<String>) -> anyhow::Result<Request> {
     let url = req[0].clone();
     return Ok(Request::new(
         parse_url(url).unwrap()
@@ -85,4 +93,9 @@ fn parse_url(url: String) -> anyhow::Result<ParsedUri, String> {
     };
 
     return Ok(parsed_url);
+}
+
+fn get_body_from_req(req: Vec<String>) -> Option<String> {
+    println!("request: {:?}", req);
+    return None;
 }
