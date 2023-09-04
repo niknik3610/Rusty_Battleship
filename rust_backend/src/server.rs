@@ -1,5 +1,9 @@
 use std::net::TcpListener;
-use crate::{SERVER_ADDR, request::handle_request, battleship_game::Game};
+use crate::{
+    SERVER_ADDR,
+    request::handle_request,
+    battleship_game::Game
+};
 
 pub async fn run_server() {
     let mut game = Game::new();

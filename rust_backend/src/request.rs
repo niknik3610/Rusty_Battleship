@@ -1,6 +1,6 @@
 use std::{
     net::TcpStream, 
-    io::{BufReader, BufRead}, str::FromStr, any
+    io::{BufReader, BufRead, Read}, str::FromStr, any
 };
 
 use anyhow::anyhow;
@@ -23,29 +23,15 @@ impl Request {
 }
 
 pub fn handle_request(mut con: TcpStream, game: &mut Game) {
-    let buf_reader = BufReader::new(&mut con);
-    let stringified_req: Vec<_> = buf_reader
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
-
-    let parsed_req = parse_request(&stringified_req).unwrap();
+    let parsed_req = parse_request_from_stream(&mut con).unwrap();
     match parsed_req.uri.method {
         Method::GET => handle_get_request(parsed_req, con, game),
         Method::POST => {
-            get_body_from_req(stringified_req);
             handle_post_request(parsed_req, con, game);
         }
     }
 }
 
-fn parse_request(req: &Vec<String>) -> anyhow::Result<Request> {
-    let url = req[0].clone();
-    return Ok(Request::new(
-        parse_url(url).unwrap()
-    ));
-}
 
 #[derive(Debug)]
 pub struct ParsedUri {
@@ -69,7 +55,49 @@ impl Method {
     }
 }
 
-fn parse_url(url: String) -> anyhow::Result<ParsedUri, String> {
+fn parse_request_from_stream(stream: &mut TcpStream) -> anyhow::Result<Request> {
+    let mut reader = BufReader::new(stream.try_clone().unwrap());
+    let mut header = String::new();
+
+    loop {
+        let line_size = reader.read_line(&mut header).unwrap();
+
+        if line_size < 3 {
+            break;
+        }
+    }
+
+    let split_header: Vec<&str> = header.lines().collect();
+
+    let mut content_len = 0;
+
+    split_header.iter().for_each(|line| {
+        if line.starts_with("content-length") {
+            let line_split = line.split(":");
+            line_split.for_each(|s| {
+                if !s.starts_with("content-length") {
+                    content_len = s.trim().parse().unwrap();
+                }
+            })
+        }
+    });
+
+    let url = split_header[0].clone();
+    let parsed_url = parse_url(url).unwrap();
+    let mut parsed_req = Request::new(parsed_url);
+
+    if content_len == 0 {
+        return Ok(parsed_req);
+    }
+
+    let mut content_buffer = vec![0; content_len];
+    stream.read_exact(&mut content_buffer).unwrap();
+    parsed_req.add_body(std::str::from_utf8(&content_buffer[..]).unwrap());
+
+    return Ok(parsed_req);
+}
+
+fn parse_url(url: &str) -> anyhow::Result<ParsedUri, String> {
     let mut curr_field = 0;
     let mut fields = vec![
         String::new(),      //Method
@@ -95,7 +123,7 @@ fn parse_url(url: String) -> anyhow::Result<ParsedUri, String> {
     return Ok(parsed_url);
 }
 
-fn get_body_from_req(req: Vec<String>) -> Option<String> {
-    println!("request: {:?}", req);
+fn get_body_from_reader(stream: BufReader<TcpStream>, header: Vec<String>) -> Option<String> {
+    
     return None;
 }

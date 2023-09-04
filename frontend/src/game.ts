@@ -11,6 +11,5 @@ export module Game {
     }
  
     export type Board = SquareState[][];
-
 }
 
