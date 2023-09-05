@@ -24,12 +24,9 @@ impl Request {
 
 pub fn handle_request(mut con: TcpStream, game: &mut Game) {
     let parsed_req = parse_request_from_stream(&mut con).unwrap();
-    println!("{:?}: \nbody:{:?}", parsed_req.uri, parsed_req.body);
     match parsed_req.uri.method {
         Method::GET => handle_get_request(parsed_req, con, game),
-        Method::POST => {
-            handle_post_request(parsed_req, con, game);
-        }
+        Method::POST => handle_post_request(parsed_req, con, game),
     }
 }
 
@@ -98,9 +95,7 @@ fn parse_request_from_stream(stream: &mut TcpStream) -> anyhow::Result<Request> 
     }
 
     let mut content_buffer = vec![0; content_len];
-    println!("starting read");
     reader.read_exact(&mut content_buffer).unwrap();
-    println!("fin read");
     parsed_req.add_body(std::str::from_utf8(&content_buffer[..]).unwrap());
     return Ok(parsed_req);
 }
@@ -129,9 +124,4 @@ fn parse_url(url: &str) -> anyhow::Result<ParsedUri, String> {
     };
 
     return Ok(parsed_url);
-}
-
-fn get_body_from_reader(stream: BufReader<TcpStream>, header: Vec<String>) -> Option<String> {
-    
-    return None;
 }

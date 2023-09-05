@@ -1,8 +1,9 @@
 pub mod ApiStructs {
+    #[allow(non_snake_case)]
     #[derive(serde::Deserialize)]
     pub struct SendMove {
-        pub coordinates: [u32; 2],
-        pub movetype: MoveType,
+        pub coordinates: [usize; 2],
+        pub moveType: MoveType,
     }
     #[derive(serde::Deserialize)]
     pub enum MoveType {

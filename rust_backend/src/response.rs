@@ -1,7 +1,7 @@
 use std::{net::TcpStream, io::{Write, Read}, fs::File};
 use anyhow::anyhow;
 use serde::Serializer;
-use crate::{router::{self, RouterError}, battleship_game::{Game, Board}};
+use crate::{router::{self, RouterError}, battleship_game::{Game, Board, GameState}, api_structs::ApiStructs::{SendMove, MoveType}};
 use crate::request::Request;
 
 pub fn response_200(mut con: TcpStream) {
@@ -102,7 +102,10 @@ pub fn handle_get_request(req: Request, con: TcpStream, game: &Game) {
 }
 fn updated_board_req(requesting_player_id: usize, con: TcpStream, game: &Game) {
     let board: anyhow::Result<&Board>;
-    if game.current_turn == requesting_player_id {
+    if let GameState::Initilization = game.game_state {
+        board = game.get_board_priv(requesting_player_id);
+    }
+    else if game.current_turn == requesting_player_id {
         board = game.get_board_attack(requesting_player_id);
     }
     else {
@@ -135,8 +138,20 @@ pub fn handle_post_request(req: Request, con: TcpStream, game: &mut Game) {
         "sendMove" => {
             let c_id = get_singleton_resource_id(split_uri[2]);
             if let Some(c_id) = c_id {
+                if let None = req.body  {
+                    response_404(con);
+                    return;
+                }
+                let requested_move = serde_json::from_str::<SendMove>(&req.body.unwrap()).unwrap();
+                match requested_move.moveType {
+                    MoveType::AliveSquare => game.alive_square(
+                        (requested_move.coordinates[0], requested_move.coordinates[1]),
+                        c_id
+                        ).unwrap(),
+                    MoveType::KillSquare => todo!(),
+                }
+                
                 response_201(con, None);
-
             }
         },
         _ => {
