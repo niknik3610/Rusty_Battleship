@@ -10,4 +10,9 @@ pub mod ApiStructs {
         KillSquare,
         AliveSquare
     }
+
+    #[derive(serde::Serialize)]
+    pub struct HitSuccess {
+        pub success: bool,
+    }
 }

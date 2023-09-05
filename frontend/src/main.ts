@@ -51,27 +51,26 @@ function renderBoard(board: string, board_ctx: CanvasRenderingContext2D) {
 
     console.log(parsed_board);
 
-    board_ctx.fillStyle = "blue";
     let squaresize = {
         x: CANVAS_SIZE.x/BOARD_SIZE.x,
         y: CANVAS_SIZE.y/BOARD_SIZE.y
     }
-    
+
+
     for (let x = 0; x < BOARD_SIZE.x; x += 1) {
         for (let y = 0; y < BOARD_SIZE.y; y+= 1) {
             let board_pos = {
                 x: x * squaresize.x,
                 y: y * squaresize.y,
             }
-            
+
             if (parsed_board[x][y] === Game.SquareState.Alive) {
                 board_ctx.fillStyle = "blue"; 
-                board_ctx.fillRect(board_pos.x, board_pos.y, board_pos.x + squaresize.x, board_pos.y + squaresize.y);
-
+                board_ctx.fillRect(board_pos.x, board_pos.y, squaresize.x, squaresize.y);
             }
             else if (parsed_board[x][y] === Game.SquareState.Dead) {
                 board_ctx.fillStyle = "red";
-                board_ctx.fillRect(board_pos.x, board_pos.y, board_pos.x + squaresize.x, board_pos.y + squaresize.y);
+                board_ctx.fillRect(board_pos.x, board_pos.y, squaresize.x, squaresize.y);
             }
         }
     }

@@ -129,7 +129,7 @@ pub fn handle_post_request(req: Request, con: TcpStream, game: &mut Game) {
     let split_uri: Vec<&str> = req.uri.url.split("/").collect();
 
     match split_uri[1] {
-        "request_client_id" => {
+        "requestClientID" => {
             let c_id = game.player_connection();
             let serialized_id = serde_json::to_string(&c_id).unwrap();
             let response = format!("{{\"c_id\": {serialized_id}}}");
@@ -144,14 +144,22 @@ pub fn handle_post_request(req: Request, con: TcpStream, game: &mut Game) {
                 }
                 let requested_move = serde_json::from_str::<SendMove>(&req.body.unwrap()).unwrap();
                 match requested_move.moveType {
-                    MoveType::AliveSquare => game.alive_square(
-                        (requested_move.coordinates[0], requested_move.coordinates[1]),
-                        c_id
-                        ).unwrap(),
-                    MoveType::KillSquare => todo!(),
-                }
-                
-                response_201(con, None);
+                    MoveType::AliveSquare => {
+                        game.alive_square(
+                            (requested_move.coordinates[0], requested_move.coordinates[1]),
+                            c_id
+                            ).unwrap();
+                        response_201(con, None);
+                    },
+                    MoveType::KillSquare => {
+                        let result = game.kill_square(
+                            (requested_move.coordinates[0], requested_move.coordinates[1]),
+                            c_id
+                            ).unwrap();
+                        let response = serde_json::to_string(&result).unwrap();
+                        response_201(con, Some(&response[..]));
+                    }
+                }    
             }
         },
         _ => {
