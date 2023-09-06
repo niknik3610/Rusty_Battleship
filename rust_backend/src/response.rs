@@ -1,7 +1,7 @@
 use std::{net::TcpStream, io::{Write, Read}, fs::File};
 use anyhow::anyhow;
 use serde::Serializer;
-use crate::{router::{self, RouterError}, battleship_game::{Game, Board, GameState}, api_structs::ApiStructs::{SendMove, MoveType}};
+use crate::{router::{self, RouterError}, battleship_game::{Game, Board, GameState}, api_structs::ApiStructs::{SendMove, MoveType, self}};
 use crate::request::Request;
 
 pub fn response_200(mut con: TcpStream) {
@@ -131,9 +131,9 @@ pub fn handle_post_request(req: Request, con: TcpStream, game: &mut Game) {
     match split_uri[1] {
         "requestClientID" => {
             let c_id = game.player_connection();
-            let serialized_id = serde_json::to_string(&c_id).unwrap();
-            let response = format!("{{\"c_id\": {serialized_id}}}");
-            response_201(con, Some(response.as_str()));
+            let response = ApiStructs::ClientID{c_id};  
+            let serialized_response = &serde_json::to_string(&response).unwrap()[..];
+            response_201(con, Some(serialized_response));
         },
         "sendMove" => {
             let c_id = get_singleton_resource_id(split_uri[2]);

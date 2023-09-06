@@ -9,9 +9,10 @@ const BOARD_SIZE = {
     x: 10,
     y: 10,
 }
-const CLIENT_ID = 0;
+let CLIENT_ID: number | undefined; 
 
-function main() {
+await main();
+async function main() {
     const board = document.getElementById("gameboard")! as HTMLCanvasElement;
     const board_ctx = board.getContext("2d")!;
 
@@ -19,6 +20,15 @@ function main() {
     board.height = CANVAS_SIZE.y;
 
     board_ctx.fillStyle = "black";
+
+    CLIENT_ID = await fetchClientID(); 
+    if (!CLIENT_ID) {
+        console.error("Unable to get Client_ID, something went wrong when connecting to server");
+        return;
+    }   
+    const id_field = document.getElementById("id")! as HTMLParagraphElement;
+    id_field.textContent = "Your Client ID: " + CLIENT_ID;
+
     board_ctx.fillRect(0, 0, CANVAS_SIZE.x, CANVAS_SIZE.y);
 
     setInterval(async () => {
@@ -56,7 +66,6 @@ function renderBoard(board: string, board_ctx: CanvasRenderingContext2D) {
         y: CANVAS_SIZE.y/BOARD_SIZE.y
     }
 
-
     for (let x = 0; x < BOARD_SIZE.x; x += 1) {
         for (let y = 0; y < BOARD_SIZE.y; y+= 1) {
             let board_pos = {
@@ -65,17 +74,33 @@ function renderBoard(board: string, board_ctx: CanvasRenderingContext2D) {
             }
 
             if (parsed_board[x][y] === Game.SquareState.Alive) {
-                board_ctx.fillStyle = "blue"; 
+                board_ctx.fillStyle = "gray"; 
                 board_ctx.fillRect(board_pos.x, board_pos.y, squaresize.x, squaresize.y);
             }
             else if (parsed_board[x][y] === Game.SquareState.Dead) {
                 board_ctx.fillStyle = "red";
                 board_ctx.fillRect(board_pos.x, board_pos.y, squaresize.x, squaresize.y);
             }
+            else if (parsed_board[x][y] === Game.SquareState.Miss) {
+                board_ctx.fillStyle = "yellow";
+                board_ctx.fillRect(board_pos.x, board_pos.y, squaresize.x, squaresize.y);
+            }
         }
     }
 }
 
-main();
-
+type ClientIDResponse = {
+    c_id: number
+}
+async function fetchClientID(): Promise<number | undefined> {
+    try {
+        let result = await Request.postRequest("/api/requestClientID", "");
+        let parsedResult: ClientIDResponse = JSON.parse(result);
+        return parsedResult.c_id;
+    }
+    catch (e) {
+        console.log(e);
+        return undefined;
+    }
+}
 

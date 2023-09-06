@@ -15,4 +15,9 @@ pub mod ApiStructs {
     pub struct HitSuccess {
         pub success: bool,
     }
+
+    #[derive(serde::Serialize)]
+    pub struct ClientID {
+        pub c_id: usize,
+    }
 }

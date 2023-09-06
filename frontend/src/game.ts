@@ -2,7 +2,8 @@ export module Game {
     export enum SquareState {
         Alive = "Alive",
         Dead = "Dead",
-        Empty = "Empty"
+        Empty = "Empty",
+        Miss = "Miss",
     }
 
     export enum MoveType {

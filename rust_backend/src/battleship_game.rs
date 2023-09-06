@@ -71,17 +71,19 @@ pub struct Game {
         return Err(anyhow!("Invalid Gamestate Request"));
     }
     pub fn kill_square(&mut self, coords: Vec2, player_id: usize) 
-        -> anyhow::Result<ApiStructs::HitSuccess> {
-        let enemy_player = &mut self.players[player_id + 1 % 2];
-        let curr_square = &mut enemy_player.private_board[coords.0][coords.1];
+    -> anyhow::Result<ApiStructs::HitSuccess> {
+        let enemy_player = (player_id + 1) % 2;
+        let enemy_player_board = &mut self.players[enemy_player];
+        let curr_square = &mut enemy_player_board.private_board[coords.0][coords.1];
 
         match curr_square {
             SquareState::Alive => {
+                *curr_square = SquareState::Dead;
                 self.players[player_id].attack_board[coords.0][coords.1] = SquareState::Dead;
                 return Ok(ApiStructs::HitSuccess{success: true});
             },
             SquareState::Empty => { 
-                self.players[player_id].attack_board[coords.0][coords.1] = SquareState::Dead;
+                self.players[player_id].attack_board[coords.0][coords.1] = SquareState::Miss;
                 return Ok(ApiStructs::HitSuccess{success: false});
             }
             _ => {
@@ -89,7 +91,6 @@ pub struct Game {
             }
         }
     }
-
     pub fn get_board_priv(&self, player_id: usize) -> anyhow::Result<&Board> {
         if player_id >= self.players.len() {
             return Err(anyhow!("Player ID out of bounds"));
