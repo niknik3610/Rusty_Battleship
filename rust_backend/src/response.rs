@@ -142,24 +142,27 @@ pub fn handle_post_request(req: Request, con: TcpStream, game: &mut Game) {
                     response_404(con);
                     return;
                 }
+                println!("{}", req.body.as_ref().unwrap());
                 let requested_move = serde_json::from_str::<SendMove>(&req.body.unwrap()).unwrap();
-                match requested_move.moveType {
-                    MoveType::AliveSquare => {
-                        game.alive_square(
-                            (requested_move.coordinates[0], requested_move.coordinates[1]),
-                            c_id
-                            ).unwrap();
-                        response_201(con, None);
-                    },
-                    MoveType::KillSquare => {
-                        let result = game.kill_square(
-                            (requested_move.coordinates[0], requested_move.coordinates[1]),
-                            c_id
-                            ).unwrap();
-                        let response = serde_json::to_string(&result).unwrap();
-                        response_201(con, Some(&response[..]));
+                for movement in requested_move.moves {
+                    match movement.moveType {
+                        MoveType::AliveSquare => {
+                            game.alive_square(
+                                (movement.coordinates[0], movement.coordinates[1]),
+                                c_id
+                                ).unwrap();
+                        },
+                        MoveType::KillSquare => {
+                            let result = game.kill_square(
+                                (movement.coordinates[0], movement.coordinates[1]),
+                                c_id
+                                ).unwrap();
+                            serde_json::to_string(&result).unwrap();
+                        }
                     }
-                }    
+                }
+                response_201(con, None);
+                    
             }
         },
         _ => {

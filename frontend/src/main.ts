@@ -13,23 +13,37 @@ let CLIENT_ID: number | undefined;
 
 await main();
 async function main() {
+    let moveRequests: moveRequest[] = [];
+
     const board = document.getElementById("gameboard")! as HTMLCanvasElement;
     const board_ctx = board.getContext("2d")!;
 
     board.width = CANVAS_SIZE.x;
     board.height = CANVAS_SIZE.y;
-
     board_ctx.fillStyle = "black";
 
     CLIENT_ID = await fetchClientID(); 
-    if (!CLIENT_ID) {
-        console.error("Unable to get Client_ID, something went wrong when connecting to server");
-        return;
-    }   
-    const id_field = document.getElementById("id")! as HTMLParagraphElement;
+    const id_field = document.getElementById("idStatus")! as HTMLParagraphElement;
+
+    while (!CLIENT_ID) {
+        CLIENT_ID = await fetchClientID();
+        
+        id_field.textContent = "Failed to Connect to Server, Retrying...";
+        id_field.style.color = "red";
+    }
+
+    id_field.style.color = "black";
     id_field.textContent = "Your Client ID: " + CLIENT_ID;
 
+    const sendMoves = document.getElementById("sendMovesButton")! as HTMLButtonElement;
+    sendMoves.style.visibility = "visible";
+    sendMoves.addEventListener("click", () => resolveMoveRequests(moveRequests));
+
     board_ctx.fillRect(0, 0, CANVAS_SIZE.x, CANVAS_SIZE.y);
+
+    appendMoveRequest(moveRequests, [0, 0], Game.MoveType.AliveSquare);
+    appendMoveRequest(moveRequests, [1, 0], Game.MoveType.AliveSquare);
+    appendMoveRequest(moveRequests, [2, 0], Game.MoveType.AliveSquare);
 
     setInterval(async () => {
         let board = await getRefreshedBoard();
@@ -42,13 +56,32 @@ async function getRefreshedBoard(): Promise<string> {
     return Request.getRequest("/api/updateBoard/{0}");
 }
 
-async function sendMove(coordinates: [number, number], moveType: Game.MoveType) {
-    let req_content = JSON.stringify({
-        coordiantes: coordinates,
-        movetype: moveType,
-    });
+type moveRequest = {
+    coordiantes: [number, number],
+    movetype: Game.MoveType,
+}
+async function resolveMoveRequests(moveRequests: moveRequest[]): Promise<moveRequest[]> {
+    if (moveRequests.length < 1) {
+        return moveRequests;
+    }
+    let req_content = JSON.stringify(moveRequests);
+    req_content = '{"moves":' + req_content + '}';
+    moveRequests = [];
 
     Request.postRequest(`api/sendMove/{${CLIENT_ID}}`, req_content);
+    return moveRequests;
+}
+function appendMoveRequest(
+    moveRequests: moveRequest[],
+    coordinates: [number, number],
+    moveType: Game.MoveType
+): moveRequest[] {
+    let newRequest: moveRequest = {
+        coordiantes: coordinates,
+        movetype: moveType,
+    }
+    moveRequests.push(newRequest);
+    return moveRequests;
 }
 
 function renderBoard(board: string, board_ctx: CanvasRenderingContext2D) {
