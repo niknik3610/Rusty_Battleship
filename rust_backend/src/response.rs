@@ -1,7 +1,6 @@
 use std::{net::TcpStream, io::{Write, Read}, fs::File};
 use anyhow::anyhow;
-use serde::Serializer;
-use crate::{router::{self, RouterError}, battleship_game::{Game, Board, GameState}, api_structs::ApiStructs::{SendMove, MoveType, self}};
+use crate::{router, battleship_game, api_structs::api_structs};
 use crate::request::Request;
 
 pub fn response_200(mut con: TcpStream) {
@@ -66,7 +65,7 @@ fn get_file(path: String) -> anyhow::Result<String> {
     return Ok(contents)
 }
 
-fn match_router_error(e: RouterError, con: TcpStream) {
+fn match_router_error(e: router::RouterError, con: TcpStream) {
     match e.error_type {
         router::RouterErrorType::Type404 => response_404(con),
         _ => response_500(con)
@@ -77,7 +76,7 @@ enum GetRequestType {
     SiteRequest,
     BoardRequest,
 }
-pub fn handle_get_request(req: Request, con: TcpStream, game: &Game) {
+pub fn handle_get_request(req: Request, con: TcpStream, game: &battleship_game::Game) {
     let split_uri: Vec<&str> = req.uri.url.split("/").collect();
 
     println!("{}", split_uri[1]);
@@ -100,9 +99,9 @@ pub fn handle_get_request(req: Request, con: TcpStream, game: &Game) {
         }
     }
 }
-fn updated_board_req(requesting_player_id: usize, con: TcpStream, game: &Game) {
-    let board: anyhow::Result<&Board>;
-    if let GameState::Initilization = game.game_state {
+fn updated_board_req(requesting_player_id: usize, con: TcpStream, game: &battleship_game::Game) {
+    let board: anyhow::Result<&battleship_game::Board>;
+    if let battleship_game::GameState::Initilization = game.game_state {
         board = game.get_board_priv(requesting_player_id);
     }
     else if game.current_turn == requesting_player_id {
@@ -125,13 +124,13 @@ fn updated_board_req(requesting_player_id: usize, con: TcpStream, game: &Game) {
     }
 }
 
-pub fn handle_post_request(req: Request, con: TcpStream, game: &mut Game) {
+pub fn handle_post_request(req: Request, con: TcpStream, game: &mut battleship_game::Game) {
     let split_uri: Vec<&str> = req.uri.url.split("/").collect();
 
     match split_uri[1] {
         "requestClientID" => {
             let c_id = game.player_connection();
-            let response = ApiStructs::ClientID{c_id};  
+            let response = api_structs::ClientID{c_id};  
             let serialized_response = &serde_json::to_string(&response).unwrap()[..];
             response_201(con, Some(serialized_response));
         },
@@ -143,16 +142,17 @@ pub fn handle_post_request(req: Request, con: TcpStream, game: &mut Game) {
                     return;
                 }
                 println!("{}", req.body.as_ref().unwrap());
-                let requested_move = serde_json::from_str::<SendMove>(&req.body.unwrap()).unwrap();
-                for movement in requested_move.moves {
+                let requested_move = serde_json::from_str::<api_structs::MoveRequestGroup>(&req.body.unwrap()).unwrap();
+
+                for movement in requested_move.moveRequests {
                     match movement.moveType {
-                        MoveType::AliveSquare => {
+                        api_structs::MoveType::AliveSquare => {
                             game.alive_square(
                                 (movement.coordinates[0], movement.coordinates[1]),
                                 c_id
                                 ).unwrap();
                         },
-                        MoveType::KillSquare => {
+                        api_structs::MoveType::KillSquare => {
                             let result = game.kill_square(
                                 (movement.coordinates[0], movement.coordinates[1]),
                                 c_id

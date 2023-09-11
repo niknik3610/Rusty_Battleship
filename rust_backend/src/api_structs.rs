@@ -1,15 +1,16 @@
-pub mod ApiStructs {
+pub mod api_structs {
     #[allow(non_snake_case)]
 
     #[derive(serde::Deserialize)]
-    pub struct Move {
+    pub struct MoveRequest {
         pub coordinates: [usize; 2],
         pub moveType: MoveType,
     }
 
+    #[allow(non_snake_case)]
     #[derive(serde::Deserialize)]
-    pub struct SendMove {
-        pub moves: Vec<Move>
+    pub struct MoveRequestGroup {
+        pub moveRequests: Vec<MoveRequest>
     }
 
     #[derive(serde::Deserialize)]

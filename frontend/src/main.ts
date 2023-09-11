@@ -1,5 +1,6 @@
 import { Game } from "./game";
-import { Request } from "./req";
+import { ApiRequestType } from "./api_request_types";
+import { Request } from "./api_request";
 
 const CANVAS_SIZE = {
     x: 700,
@@ -9,12 +10,10 @@ const BOARD_SIZE = {
     x: 10,
     y: 10,
 }
-let CLIENT_ID: number | undefined; 
+export let CLIENT_ID: number | undefined; 
 
 await main();
 async function main() {
-    let moveRequests: moveRequest[] = [];
-
     const board = document.getElementById("gameboard")! as HTMLCanvasElement;
     const board_ctx = board.getContext("2d")!;
 
@@ -25,7 +24,7 @@ async function main() {
     CLIENT_ID = await fetchClientID(); 
     const id_field = document.getElementById("idStatus")! as HTMLParagraphElement;
 
-    while (!CLIENT_ID) {
+    while (CLIENT_ID === undefined) {
         CLIENT_ID = await fetchClientID();
         
         id_field.textContent = "Failed to Connect to Server, Retrying...";
@@ -35,53 +34,26 @@ async function main() {
     id_field.style.color = "black";
     id_field.textContent = "Your Client ID: " + CLIENT_ID;
 
+    let moveRequestGroup = new ApiRequestType.MoveRequestGroup(); 
+
     const sendMoves = document.getElementById("sendMovesButton")! as HTMLButtonElement;
     sendMoves.style.visibility = "visible";
-    sendMoves.addEventListener("click", () => resolveMoveRequests(moveRequests));
+    sendMoves.addEventListener("click", () => 
+                               CLIENT_ID !== undefined ? moveRequestGroup.resolve(CLIENT_ID!) : {});
 
     board_ctx.fillRect(0, 0, CANVAS_SIZE.x, CANVAS_SIZE.y);
 
-    appendMoveRequest(moveRequests, [0, 0], Game.MoveType.AliveSquare);
-    appendMoveRequest(moveRequests, [1, 0], Game.MoveType.AliveSquare);
-    appendMoveRequest(moveRequests, [2, 0], Game.MoveType.AliveSquare);
+    moveRequestGroup.push([0, 0], Game.MoveType.AliveSquare);
 
     setInterval(async () => {
         let board = await getRefreshedBoard();
         renderBoard(board, board_ctx);
-    }, 1000);
+    }, 500);
 }
 
 async function getRefreshedBoard(): Promise<string> {
     console.log("fetching board");
     return Request.getRequest("/api/updateBoard/{0}");
-}
-
-type moveRequest = {
-    coordiantes: [number, number],
-    movetype: Game.MoveType,
-}
-async function resolveMoveRequests(moveRequests: moveRequest[]): Promise<moveRequest[]> {
-    if (moveRequests.length < 1) {
-        return moveRequests;
-    }
-    let req_content = JSON.stringify(moveRequests);
-    req_content = '{"moves":' + req_content + '}';
-    moveRequests = [];
-
-    Request.postRequest(`api/sendMove/{${CLIENT_ID}}`, req_content);
-    return moveRequests;
-}
-function appendMoveRequest(
-    moveRequests: moveRequest[],
-    coordinates: [number, number],
-    moveType: Game.MoveType
-): moveRequest[] {
-    let newRequest: moveRequest = {
-        coordiantes: coordinates,
-        movetype: moveType,
-    }
-    moveRequests.push(newRequest);
-    return moveRequests;
 }
 
 function renderBoard(board: string, board_ctx: CanvasRenderingContext2D) {
@@ -122,13 +94,13 @@ function renderBoard(board: string, board_ctx: CanvasRenderingContext2D) {
     }
 }
 
-type ClientIDResponse = {
+type ClientIDApiResponse = {
     c_id: number
 }
 async function fetchClientID(): Promise<number | undefined> {
     try {
         let result = await Request.postRequest("/api/requestClientID", "");
-        let parsedResult: ClientIDResponse = JSON.parse(result);
+        let parsedResult: ClientIDApiResponse = JSON.parse(result);
         return parsedResult.c_id;
     }
     catch (e) {
@@ -136,4 +108,3 @@ async function fetchClientID(): Promise<number | undefined> {
         return undefined;
     }
 }
-

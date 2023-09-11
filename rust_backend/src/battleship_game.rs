@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use serde::Serialize;
 
-use crate::api_structs::ApiStructs;
+use crate::api_structs::api_structs;
 
 pub type Board = Vec<Vec<SquareState>>;
 pub type Vec2 = (usize, usize);
@@ -71,7 +71,7 @@ pub struct Game {
         return Err(anyhow!("Invalid Gamestate Request"));
     }
     pub fn kill_square(&mut self, coords: Vec2, player_id: usize) 
-    -> anyhow::Result<ApiStructs::HitSuccess> {
+    -> anyhow::Result<api_structs::HitSuccess> {
         let enemy_player = (player_id + 1) % 2;
         let enemy_player_board = &mut self.players[enemy_player];
         let curr_square = &mut enemy_player_board.private_board[coords.0][coords.1];
@@ -80,11 +80,11 @@ pub struct Game {
             SquareState::Alive => {
                 *curr_square = SquareState::Dead;
                 self.players[player_id].attack_board[coords.0][coords.1] = SquareState::Dead;
-                return Ok(ApiStructs::HitSuccess{success: true});
+                return Ok(api_structs::HitSuccess{success: true});
             },
             SquareState::Empty => { 
                 self.players[player_id].attack_board[coords.0][coords.1] = SquareState::Miss;
-                return Ok(ApiStructs::HitSuccess{success: false});
+                return Ok(api_structs::HitSuccess{success: false});
             }
             _ => {
                 return Err(anyhow!("Invalid Move"))
