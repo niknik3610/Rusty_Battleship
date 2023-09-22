@@ -6,10 +6,17 @@ export module Game {
         Miss = "Miss",
     }
 
+    export enum GameState {
+        Preperation,
+        PlayerTurn,
+        EnemyTurn,
+        End,
+    }
+
     export enum MoveType {
         AliveSquare = "AliveSquare",
         KillSquare = "KillSquare",
     }
- 
+
     export type Board = SquareState[][];
 }

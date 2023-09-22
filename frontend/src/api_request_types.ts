@@ -3,21 +3,21 @@ import { Request } from "./api_request";
 
 export module ApiRequestType {
     export type MoveRequest = {
-        coordinates: [number, number],
-        moveType: Game.MoveType,
-    }
+        coordinates: [number, number];
+        moveType: Game.MoveType;
+    };
     export class MoveRequestGroup {
         moveRequests: MoveRequest[];
 
-        public constructor(){
-            this.moveRequests = []
-        };
+        public constructor() {
+            this.moveRequests = [];
+        }
 
-        public push(coordinates: [number, number],moveType: Game.MoveType) {
+        public push(coordinates: [number, number], moveType: Game.MoveType) {
             let newRequest: MoveRequest = {
                 coordinates: coordinates,
                 moveType: moveType,
-            }
+            };
             this.moveRequests.push(newRequest);
         }
 
@@ -33,4 +33,3 @@ export module ApiRequestType {
         }
     }
 }
-
